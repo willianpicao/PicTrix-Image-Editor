@@ -289,6 +289,44 @@ def aplicar_negativo_e_mostrar():
         mostrar_imagem(imagem_negativa)
 
 
+def contornoCanny():
+    if imagem_cv2 is not None:
+        global imagem_original
+        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
+        img=imagem_cv2
+        
+        img_gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        #extrai contorno
+        img_gray = cv2.GaussianBlur(img_gray, (5,5), 0)
+        canny_img = cv2.Canny(img_gray, 30, 150)
+
+        mostrar_imagem(canny_img)
+
+def transformadaHough():
+    if imagem_cv2 is not None:
+        global imagem_original
+        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
+        img=imagem_cv2
+        img_gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        #Detecção de pontos de bordas
+        blur = cv2.GaussianBlur(img_gray, (11,11), 0)
+        dst = cv2.Canny(blur, 50, 150, None, 3)
+
+        cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+        
+        linesP = cv2.HoughLines(dst, 1, np.pi / 180, 200, None, 50, 10)
+
+        #Desenha as linhas
+        if linesP is not None:
+            for i in range(0, len(linesP)):
+                l = linesP[i][0]
+                cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA )
+        
+        mostrar_imagem(cdstP)
+
+
 # Argumentos Padrões para os botões
 btn_args_padrao = {'bg_color': '#190061',
                    'fg_color': '#3500D3'}
@@ -362,6 +400,14 @@ def janela_efeitos():
 
     # Botão para aplicar filtro gamma
     btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Gamma", command=filtro_gamma)
+    btn_zoom.pack(side="top", padx=10, pady=10)
+
+    # Botão para contorno Canny
+    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Canny", command=contornoCanny)
+    btn_zoom.pack(side="top", padx=10, pady=10)
+
+    # Botão para transformada de hough
+    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Transformada de Hough", command=transformadaHough)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
 if __name__ == "__main__":
