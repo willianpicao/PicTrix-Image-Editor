@@ -5,437 +5,478 @@ import cv2
 import numpy as np
 import io
 
-imagem_original = None  # Variável para armazenar a imagem original
-imagem_ref = None 
+original_image = None  # Variable to store the original image
+reference_image = None 
 zoom_level = 100
 
-# Função para salvar a imagem modificada
-def salvar_imagem():
+# Function to save the modified image
+def save_image():
     global zoom_level
 
-    if imagem_cv2 is not None:
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("Imagens PNG", "*.png"), ("Todos os arquivos", "*.*")])
+    if cv2_image is not None:
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG Images", "*.png"), ("All Files", "*.*")])
         if file_path:
-            # Obtém a imagem atual do canvas_imagem
-            imagem_canvas = canvas_imagem.postscript(colormode="color")
+            # Get the current image from the image_canvas
+            image_canvas = canvas_image.postscript(colormode="color")
 
-            # Converte o PS (PostScript) em uma imagem PIL
-            imagem_pil = Image.open(io.BytesIO(imagem_canvas.encode("utf-8")))
-            # Salva a imagem no formato desejado
-            imagem_pil.save(file_path)
-            print("Imagem salva com sucesso!")
+            # Convert the PostScript to a PIL image
+            pil_image = Image.open(io.BytesIO(image_canvas.encode("utf-8")))
+            # Save the image in the desired format
+            pil_image.save(file_path)
+            print("Image saved successfully!")
 
-# Função para carregar uma imagem
-def carregar_imagem():
-    global imagem_cv2, imagem_original
+# Function to load an image
+def load_image():
+    global cv2_image, original_image
     file_path = filedialog.askopenfilename()
     if file_path:
-        imagem_cv2 = cv2.imread(file_path)
-        imagem_original = imagem_cv2.copy()  # Faz uma cópia da imagem original
-        mostrar_imagem(imagem_cv2)
+        cv2_image = cv2.imread(file_path)
+        original_image = cv2_image.copy()  # Make a copy of the original image
+        show_image(cv2_image)
 
-# Função para carregar a imagem de referência
-def carregar_imagem_referencia():
-    global imagem_ref
+# Function to load the reference image
+def load_reference_image():
+    global reference_image
 
     file_path = filedialog.askopenfilename()
     if file_path:
-        imagem_ref = cv2.imread(file_path)
-        #mostrar_imagem(imagem_ref)
+        reference_image = cv2.imread(file_path)
+        #show_image(reference_image)
 
-# Função para aplicar zoom na imagem
-def zoom_imagem():
+# Function to zoom in on the image
+def zoom_image():
     global zoom_level
-    zoom_input = tk.CTkInputDialog(text="Digite o nível de zoom (em %):", title="Zoom")
-    novo_zoom = zoom_input.get_input()
-    if novo_zoom is not None:
+    zoom_input = tk.CTkInputDialog(text="Enter the zoom level (in %):", title="Zoom")
+    new_zoom = zoom_input.get_input()
+    if new_zoom is not None:
         try:
-            novo_zoom = int(novo_zoom)
-            if novo_zoom > 0:
-                zoom_level = novo_zoom
-                mostrar_imagem(imagem_original)  # Recarregar a imagem original com o novo zoom
+            new_zoom = int(new_zoom)
+            if new_zoom > 0:
+                zoom_level = new_zoom
+                show_image(original_image)  # Reload the original image with the new zoom
             else:
-                print("Valor de zoom inválido. O zoom deve ser um número positivo.")
+                print("Invalid zoom value. Zoom should be a positive number.")
         except ValueError:
-            print("Valor de zoom inválido. O zoom deve ser um número inteiro positivo.")
+            print("Invalid zoom value. Zoom should be a positive integer.")
 
-# Função para mostrar a imagem carregada na interface
-def mostrar_imagem(imagem):
+# Function to display the loaded image in the interface
+def show_image(image):
     global zoom_level
-    imagem = cv2.cvtColor(imagem, cv2.COLOR_BGR2RGB)
-    altura, largura, _ = imagem.shape
-    nova_largura = int(largura * zoom_level / 100)
-    nova_altura = int(altura * zoom_level / 100)
-    imagem_redimensionada = cv2.resize(imagem, (nova_largura, nova_altura))
-    imagem_pil = Image.fromarray(imagem_redimensionada)
-    imagem_tk = ImageTk.PhotoImage(imagem_pil)
-    # Calcula as coordenadas x e y para centralizar a imagem no canvas_imagem
-    x = (canvas_imagem.winfo_width() - nova_largura) // 2
-    y = (canvas_imagem.winfo_height() - nova_altura) // 2
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    height, width, _ = image.shape
+    new_width = int(width * zoom_level / 100)
+    new_height = int(height * zoom_level / 100)
+    resized_image = cv2.resize(image, (new_width, new_height))
+    pil_image = Image.fromarray(resized_image)
+    tk_image = ImageTk.PhotoImage(pil_image)
+    # Calculate the x and y coordinates to center the image on the image_canvas
+    x = (canvas_image.winfo_width() - new_width) // 2
+    y = (canvas_image.winfo_height() - new_height) // 2
 
-    # Limpa o canvas 
-    canvas_imagem.delete("all")
-    # Define o tamanho do canvas com base no tamanho da imagem redimensionada
-    canvas_imagem.config(width=nova_largura, height=nova_altura)
-    #Cria a imagem centralizada
-    canvas_imagem.create_image(x, y, anchor=tk.NW, image=imagem_tk)
-    canvas_imagem.image = imagem_tk
+    # Clear the canvas 
+    canvas_image.delete("all")
+    # Set the canvas size based on the size of the resized image
+    canvas_image.config(width=new_width, height=new_height)
+    # Create the centered image
+    canvas_image.create_image(x, y, anchor=tk.NW, image=tk_image)
+    canvas_image.image = tk_image
 
-# Função para aplicar um filtro de desfoque à imagem
-def aplicar_desfoque():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        imagem_desfocada = cv2.GaussianBlur(imagem_cv2, (21, 21), 0)
-        mostrar_imagem(imagem_desfocada)
+# Function to apply a blur filter to the image
+def apply_blur():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        blurred_image = cv2.GaussianBlur(cv2_image, (21, 21), 0)
+        show_image(blurred_image)
 
-# Função para aplicar filtro da mediana, retirar ruido sal pimenta
-def filtroMediana():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        imagem_desfocada = cv2.medianBlur(imagem_cv2, 3)
-        mostrar_imagem(imagem_desfocada)
+# Function to apply a median filter, remove salt and pepper noise
+def median_filter():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        blurred_image = cv2.medianBlur(cv2_image, 3)
+        show_image(blurred_image)
 
-# Função para aplicar um filtro de realce à imagem
-def aplicar_realce():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32) #Laplaciano
-        imagem_realcada = cv2.filter2D(imagem_cv2, -1, kernel)
-        mostrar_imagem(imagem_realcada)
+# Function to apply an enhancement filter to the image
+def apply_enhancement():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32)  # Laplacian
+        enhanced_image = cv2.filter2D(cv2_image, -1, kernel)
+        show_image(enhanced_image)
 
-# Função para aplicar um filtro de realce sobel
-def aplicar_realce_sobel():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        #filtros de sobel para calculo das derivadas parciais
+# Function to apply a Sobel enhancement filter
+def apply_sobel_enhancement():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        # Sobel filters for calculating partial derivatives
         sobX = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
         sobY = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
 
-        Gx = cv2.filter2D(imagem_cv2, cv2.CV_64F, sobX)# gradiente na direção X(linhas)
-        Gy = cv2.filter2D(imagem_cv2, cv2.CV_64F, sobY)# gradiente na direção Y(linhas)
+        Gx = cv2.filter2D(cv2_image, cv2.CV_64F, sobX)  # Gradient in the X direction (rows)
+        Gy = cv2.filter2D(cv2_image, cv2.CV_64F, sobY)  # Gradient in the Y direction (columns)
 
-        mag = np.sqrt( Gx**2 + Gy**2 ) # magnitude do vetor gradiente
+        magnitude = np.sqrt(Gx**2 + Gy**2)  # Magnitude of the gradient vector
 
-        img_agucada = imagem_cv2 + 0.4 * mag
-        img_agucada[img_agucada > 255]=255
-        img_agucada = img_agucada.astype(np.uint8)
+        sharpened_image = cv2_image + 0.4 * magnitude
+        sharpened_image[sharpened_image > 255] = 255
+        sharpened_image = sharpened_image.astype(np.uint8)
 
-        mag[mag > 255] = 255
-        mag = mag.astype(np.uint8)
+        magnitude[magnitude > 255] = 255
+        magnitude = magnitude.astype(np.uint8)
 
-        #img_agucada = cv2.cvtColor(img_agucada, cv2.COLOR_BGR2RGB)
-        mostrar_imagem(img_agucada)
+        show_image(sharpened_image)
 
-# Função para aplicar um filtro de realce à imagem
-def filtro_gamma():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        gamma = (tk.CTkInputDialog(text="Informe o valor de gamma", title="gamma")).get_input()
+# Function to apply an image gamma filter
+def gamma_filter():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        gamma = (tk.CTkInputDialog(text="Enter the gamma value", title="Gamma")).get_input()
         gamma = int(gamma)
-        img=imagem_cv2
+        img = cv2_image
         c = 255.0 / (255.0**gamma)
-        img_gamma = c * (img.astype(np.float64))**gamma
-        img_gamma= img_gamma.astype(np.uint8)
-        mostrar_imagem(img_gamma)
+        gamma_image = c * (img.astype(np.float64))**gamma
+        gamma_image = gamma_image.astype(np.uint8)
+        show_image(gamma_image)
 
-# Função para aplicar equalização da imagem
-def aplicar_equalizacao():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        img=imagem_cv2.copy()
+# Function to apply image equalization
+def apply_equalization():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        img = cv2_image.copy()
         R = img.shape[0]
         C = img.shape[1]
 
-        #calculo do histograma normalizado (pr)
+        # Calculate the normalized histogram (pr)
         hist = cv2.calcHist([img], [0], None, [256], [0, 256]) 
-        pr = hist/(R*C)
+        pr = hist / (R * C)
 
-        # cummulative distribution function (CDF)
+        # Cumulative distribution function (
         cdf = pr.cumsum()
         sk = 255 * cdf
         sk = np.round(sk)
 
-        # criando a imagem de saída
+        # Create the output image
         img_out = np.zeros(img.shape, dtype=np.uint8)
         for i in range(256):
             img_out[img == i] = sk[i]
-        mostrar_imagem(img_out)
+        show_image(img_out)
 
-# Função para aplicar equalização da imagem
-def aplicar_equalizacao_por_referencia():
-    global imagem_original, imagem_ref
-    carregar_imagem_referencia()
-    if imagem_cv2 is not None and imagem_ref is not None:
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        img_input=imagem_cv2.copy()#imagem de entrada       
-        img_ref =  imagem_ref.copy()
+# Function to apply equalization based on a reference image
+def apply_equalization_by_reference():
+    global original_image, reference_image
+    load_reference_image()
+    if cv2_image is not None and reference_image is not None:
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        input_img = cv2_image.copy()  # Input image       
+        reference_img = reference_image.copy()
 
-        chans_img = cv2.split(img_input)#separa os canais de cores
-        chans_ref = cv2.split(img_ref)
+        chans_input = cv2.split(input_img)  # Split color channels
+        chans_ref = cv2.split(reference_img)
 
-        # iterage nos canais da imagem de entrada e calcula o histograma
+        # Iterate over the channels of the input image and calculate the histogram
         pr = np.zeros((256, 3))
-        for chan, n in zip(chans_img, np.arange(3)):
-            pr[:,n] = cv2.calcHist([chan], [0], None, [256], [0, 256]).ravel()
+        for chan, n in zip(chans_input, np.arange(3)):
+            pr[:, n] = cv2.calcHist([chan], [0], None, [256], [0, 256]).ravel()
 
-        # iterage nos canais da imagem de referencia e calcula o histograma
+        # Iterate over the channels of the reference image and calculate the histogram
         pz = np.zeros((256, 3))
         for chan, n in zip(chans_ref, np.arange(3)):
-            pz[:,n] = cv2.calcHist([chan], [0], None, [256], [0, 256]).ravel()
+            pz[:, n] = cv2.calcHist([chan], [0], None, [256], [0, 256]).ravel()
         
-        # calcula as CDFs para a imagem de entrada
+        # Calculate the CDFs for the input image
         cdf_input = np.zeros((256, 3))
         for i in range(3):
-            cdf_input[:,i] = np.cumsum(pr[:,i]) # referencia
+            cdf_input[:, i] = np.cumsum(pr[:, i])  # Reference
         
-        # calcula as CDFs para a imagem de referencia
-        cdf_ref = np.zeros((256,3))
+        # Calculate the CDFs for the reference image
+        cdf_ref = np.zeros((256, 3))
         for i in range(3):
-            cdf_ref[:,i] = np.cumsum(pz[:,i]) # referencia
+            cdf_ref[:, i] = np.cumsum(pz[:, i])  # Reference
     
+    img_out = np.zeros(input_img.shape)  # Output image
 
-    img_out = np.zeros(img_input.shape) # imagem de saida #shape pega dimensão
-
-    for c in range(3):#corre nos planos de cores
-        for i in range(256): #corre na cdf de cada plano da imagem
-            diff = np.absolute(cdf_ref[:,c] - cdf_input[i,c])
-            indice = diff.argmin()
-            img_out[img_input[:,:,c] == i, c] = indice
+    for c in range(3):  # Iterate over color planes
+        for i in range(256):  # Iterate over the CDF of each plane of the image
+            diff = np.absolute(cdf_ref[:, c] - cdf_input[i, c])
+            index = diff.argmin()
+            img_out[input_img[:, :, c] == i, c] = index
 
     img_out = img_out.astype(np.uint8)
     
-    img_input = cv2.cvtColor(img_input, cv2.COLOR_BGR2RGB)
-    img_ref = cv2.cvtColor(img_ref, cv2.COLOR_BGR2RGB)
+    input_img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB)
+    reference_img = cv2.cvtColor(reference_img, cv2.COLOR_BGR2RGB)
     img_out = cv2.cvtColor(img_out, cv2.COLOR_BGR2RGB)
-    mostrar_imagem(img_out)
+    show_image(img_out)
 
-# Função para restaurar a imagem original
-def restaurar_original():
-    global imagem_cv2, imagem_original
-    if imagem_original is not None:
-        imagem_cv2 = imagem_original.copy()  # Restaura a imagem original
-        mostrar_imagem(imagem_cv2)
+# Function to restore the original image
+def restore_original():
+    global cv2_image, original_image
+    if original_image is not None:
+        cv2_image = original_image.copy()  # Restore the original image
+        show_image(cv2_image)
 
-fatorBrilho = 1.0  # Inicializa o fator de brilho
-def ajustar_e_mostrar_brilho():
-    global fatorBrilho, imagem_cv2, imagem_original
+brightness_factor = 1.0  # Initialize the brightness factor
 
-    brilho_input = tk.CTkInputDialog(text="Digite o nível do fator de multiplicação de brilho (0~2):", title="Brilho")
-    novo_fator_brilho = brilho_input.get_input()
+# Function to adjust and display brightness
+def adjust_and_show_brightness():
+    global brightness_factor, cv2_image, original_image
 
-    if novo_fator_brilho is not None:
+    brightness_input = tk.CTkInputDialog(text="Enter the brightness multiplication factor (0~2):", title="Brightness")
+    new_brightness_factor = brightness_input.get_input()
+
+    if new_brightness_factor is not None:
         try:
-            novo_fator_brilho = float(novo_fator_brilho)
-            if 0 <= novo_fator_brilho <= 2:
-                fatorBrilho = novo_fator_brilho
-                imagem_nova = ajustar_brilho(imagem_original, fatorBrilho)
-                mostrar_imagem(imagem_nova)
+            new_brightness_factor = float(new_brightness_factor)
+            if 0 <= new_brightness_factor <= 2:
+                brightness_factor = new_brightness_factor
+                new_image = adjust_brightness(original_image, brightness_factor)
+                show_image(new_image)
             else:
-                print("Fator de brilho fora do intervalo válido (0~2).")
+                print("Brightness factor out of valid range (0~2).")
         except ValueError:
-            print("Valor de fator de brilho inválido. Use um número decimal entre 0 e 2.")
+            print("Invalid brightness factor value. Use a decimal number between 0 and 2.")
 
-# Função para ajustar o brilho da imagem
-def ajustar_brilho(imagem, fator):
-    # Verifica se a imagem é uma imagem colorida ou em tons de cinza
-    if imagem.ndim == 2:
-        # Imagem em tons de cinza
-        nova_imagem = imagem.astype(np.float64)
-        nova_imagem = nova_imagem * fator
-        nova_imagem[nova_imagem > 255] = 255
-        nova_imagem[nova_imagem < 0] = 0
-        nova_imagem = nova_imagem.astype(np.uint8)
-    elif imagem.ndim == 3:
-        # Imagem colorida (3 canais: Vermelho, Verde, Azul)
-        nova_imagem = imagem.astype(np.float64)
-        nova_imagem = nova_imagem * fator
-        nova_imagem[nova_imagem > 255] = 255
-        nova_imagem[nova_imagem < 0] = 0
-        nova_imagem = nova_imagem.astype(np.uint8)
+# Function to adjust the brightness of the image
+def adjust_brightness(image, factor):
+    if image.ndim == 2:
+        # Grayscale image
+        new_image = image.astype(np.float64)
+        new_image = new_image * factor
+        new_image[new_image > 255] = 255
+        new_image[new_image < 0] = 0
+        new_image = new_image.astype(np.uint8)
+    elif image.ndim == 3:
+        # Color image (3 channels: Red, Green, Blue)
+        new_image = image.astype(np.float64)
+        new_image = new_image * factor
+        new_image[new_image > 255] = 255
+        new_image[new_image < 0] = 0
+        new_image = new_image.astype(np.uint8)
     else:
-        raise ValueError("Imagem com número de dimensões não suportado.")
+        raise ValueError("Image with unsupported number of dimensions.")
 
-    return nova_imagem
+    return new_image
 
-def criar_negativo(imagem):
-    if imagem.ndim == 2:
-        # Imagem em tons de cinza
-        imagem_negativa = 255 - imagem
-    elif imagem.ndim == 3:
-        # Imagem colorida (3 canais: Vermelho, Verde, Azul)
-        imagem_negativa = 255 - imagem
+# Function to create a negative of the image
+def create_negative(image):
+    if image.ndim == 2:
+        # Grayscale image
+        negative_image = 255 - image
+    elif image.ndim == 3:
+        # Color image (3 channels: Red, Green, Blue)
+        negative_image = 255 - image
     else:
-        raise ValueError("Imagem com número de dimensões não suportado.")
+        raise ValueError("Image with unsupported number of dimensions.")
 
-    return imagem_negativa
+    return negative_image
 
-def aplicar_negativo_e_mostrar():
-    global imagem_cv2, imagem_original
+# Function to apply negative effect and display
+def apply_negative_and_show():
+    global cv2_image, original_image
 
-    if imagem_cv2 is not None:
-        # Salva a imagem original antes de aplicar o efeito
-        imagem_original = imagem_cv2.copy()
+    if cv2_image is not None:
+        # Save the original image before applying the effect
+        original_image = cv2_image.copy()
 
-        # Aplica o efeito de negativo
-        imagem_negativa = criar_negativo(imagem_original)
+        # Apply the negative effect
+        negative_image = create_negative(original_image)
 
-        # Mostra a imagem com o efeito na interface
-        mostrar_imagem(imagem_negativa)
+        # Display the image with the effect in the interface
+        show_image(negative_image)
 
 
-def contornoCanny():
-    if imagem_cv2 is not None:
-        global imagem_original
-        threshold1_input = tk.CTkInputDialog(text="Informe primeiro limiar de corte.", title="threshold1")
+# Function for Canny edge detection
+def canny_edge():
+    if cv2_image is not None:
+        global original_image
+        threshold1_input = tk.CTkInputDialog(text="Enter the first threshold value.", title="Threshold 1")
         threshold1 = int(threshold1_input.get_input())
-        threshold2_input = tk.CTkInputDialog(text="Informe segundo limiar de corte.", title="threshold2")
+        threshold2_input = tk.CTkInputDialog(text="Enter the second threshold value.", title="Threshold 2")
         threshold2 = int(threshold2_input.get_input())
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        img=imagem_cv2
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        img = cv2_image
         
-        img_gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        #extrai contorno
-        img_gray = cv2.GaussianBlur(img_gray, (5,5), 0)
+        # Extract edges
+        img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0)
         canny_img = cv2.Canny(img_gray, threshold1, threshold2)
 
-        mostrar_imagem(canny_img)
+        show_image(canny_img)
 
-def transformadaHough():
-    if imagem_cv2 is not None:
-        global imagem_original
-        imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
-        img=imagem_cv2
-        img_gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# Function for Hough Transform
+def hough_transform():
+    if cv2_image is not None:
+        global original_image
+        original_image = cv2_image.copy()  # Save the original image before applying the filter
+        img = cv2_image
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        #Detecção de pontos de bordas
-        blur = cv2.GaussianBlur(img_gray, (11,11), 0)
-        dst = cv2.Canny(blur, 50, 150, None, 3)
+        # Create a simple dialog for the user to input Hough Transform thresholds and parameters
+        threshold1_input = tk.CTkInputDialog(text="Enter the first Hough Transform threshold:", title="Hough Transform Threshold 1")
+        #threshold1_input.wait_window()
+        threshold1 = threshold1_input.get_input()
 
-        cdstP = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
-        
-        linesP = cv2.HoughLines(dst, 1, np.pi / 180, 200, None, 50, 10)
+        threshold2_input = tk.CTkInputDialog(text="Enter the second Hough Transform threshold:", title="Hough Transform Threshold 2")
+        #threshold2_input.wait_window()
+        threshold2 = threshold2_input.get_input()
 
-        #Desenha as linhas
-        if linesP is not None:
-            for i in range(0, len(linesP)):
-                l = linesP[i][0]
-                cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0,0,255), 3, cv2.LINE_AA )
-        
-        mostrar_imagem(cdstP)
+        rho_input = tk.CTkInputDialog(text="Enter the rho value:", title="Hough Transform Rho")
+        #rho_input.wait_window()
+        rho = rho_input.get_input()
+
+        threshold_input = tk.CTkInputDialog(text="Enter the accumulator threshold value:", title="Hough Transform Accumulator Threshold")
+        #threshold_input.wait_window()
+        threshold = threshold_input.get_input()
+
+        min_line_length_input = tk.CTkInputDialog(text="Enter the minimum line length:", title="Hough Transform Min Line Length")
+        #min_line_length_input.wait_window()
+        min_line_length = min_line_length_input.get_input()
+
+        max_line_gap_input = tk.CTkInputDialog(text="Enter the maximum gap between lines:", title="Hough Transform Max Line Gap")
+        #max_line_gap_input.wait_window()
+        max_line_gap = max_line_gap_input.get_input()
+
+        if all(param is not None for param in [threshold1, threshold2, rho, threshold, min_line_length, max_line_gap]):
+            try:
+                threshold1 = int(threshold1)
+                threshold2 = int(threshold2)
+                rho = float(rho)
+                threshold = int(threshold)
+                min_line_length = int(min_line_length)
+                max_line_gap = int(max_line_gap)
+
+                # Edge Detection
+                blur = cv2.GaussianBlur(img_gray, (11, 11), 0)
+                edges = cv2.Canny(blur, threshold1, threshold2, None, 3)
+
+                cdstP = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
+                linesP = cv2.HoughLinesP(edges, rho, np.pi / 180, threshold, minLineLength=min_line_length, maxLineGap=max_line_gap)
+
+                # Draw lines
+                if linesP is not None:
+                    for i in range(0, len(linesP)):
+                        l = linesP[i][0]
+                        cv2.line(cdstP, (l[0], l[1]), (l[2], l[3]), (0, 0, 255), 3, cv2.LINE_AA)
+
+                show_image(cdstP)
+            except ValueError:
+                print("Invalid input values. Please enter valid numerical values.")
 
 
-# Argumentos Padrões para os botões
-btn_args_padrao = {'bg_color': '#190061',
-                   'fg_color': '#3500D3'}
 
-def cria_botoes(master, argsPadrao, text, command=None):
-    botao = tk.CTkButton(master, **argsPadrao, text=text, command=command)
-    return botao
+# Default arguments for buttons
+btn_default_args = {'bg_color': '#190061',
+                    'fg_color': '#3500D3'}
 
-def menu_botoes():
-    # Frame para os botões
-    frame_botoes = tk.CTkFrame(master=janela, width=160, height=320, fg_color="#190061")
-    frame_botoes.pack(side="left", padx=10, pady=10)
+def create_buttons(master, default_args, text, command=None):
+    button = tk.CTkButton(master, **default_args, text=text, command=command)
+    return button
 
-    global btn_args_padrao
+def create_buttons_menu():
+    # Frame for buttons
+    buttons_frame = tk.CTkFrame(master=window, width=160, height=320, fg_color="#190061")
+    buttons_frame.pack(side="left", padx=10, pady=10)
 
-    # Botão para carregar a imagem
-    btn_carregar = cria_botoes(frame_botoes, btn_args_padrao, "Carregar Imagem", command=carregar_imagem)
-    btn_carregar.pack(pady=10)
+    global btn_default_args
 
-    # Botão para salvar a imagem
-    btn_salvar = cria_botoes(frame_botoes, btn_args_padrao, "Salvar Imagem", command=salvar_imagem)
-    btn_salvar.pack(pady=10)
+    # Button to load the image
+    btn_load = create_buttons(buttons_frame, btn_default_args, "Load Image", command=load_image)
+    btn_load.pack(pady=10)
 
-    # Botão para restaurar a imagem original
-    btn_restaurar = cria_botoes(frame_botoes, btn_args_padrao, "Restaurar Original", command=restaurar_original)
-    btn_restaurar.pack(pady=10)
+    # Button to save the image
+    btn_save = create_buttons(buttons_frame, btn_default_args, "Save Image", command=save_image)
+    btn_save.pack(pady=10)
 
-    # Botão para aplicar zoom na imagem
-    btn_zoom = cria_botoes(frame_botoes, btn_args_padrao, "Zoom", command=zoom_imagem)
+    # Button to restore the original image
+    btn_restore = create_buttons(buttons_frame, btn_default_args, "Restore Original", command=restore_original)
+    btn_restore.pack(pady=10)
+
+    # Button to zoom in the image
+    btn_zoom = create_buttons(buttons_frame, btn_default_args, "Zoom", command=zoom_image)
     btn_zoom.pack(padx=10, pady=10)
 
-    # Botão para selecionar filtros
-    btn_restaurar = cria_botoes(frame_botoes, btn_args_padrao, "Selecionar Efeitos", command=janela_efeitos)
-    btn_restaurar.pack(pady=10)
+    # Button to select filters
+    btn_restore = create_buttons(buttons_frame, btn_default_args, "Select Effects", command=effects_window)
+    btn_restore.pack(pady=10)
 
-def janela_efeitos():
-    nova_janela = tk.CTkToplevel(janela)
-    nova_janela.title("Efeitos")
-    global btn_args_padrao
-    # Botão para aplicar desfoque
-    btn_desfoque = cria_botoes(nova_janela, btn_args_padrao, "Aplicar Desfoque(Gaussian)", command=aplicar_desfoque)
-    btn_desfoque.pack(pady=10)
+def effects_window():
+    new_window = tk.CTkToplevel(window)
+    new_window.title("Effects")
+    global btn_default_args
+    # Button to apply blur
+    btn_blur = create_buttons(new_window, btn_default_args, "Apply Blur (Gaussian)", command=apply_blur)
+    btn_blur.pack(pady=10)
 
-    # Botão para aplicar realce
-    btn_realce = cria_botoes(nova_janela, btn_args_padrao, "Aplicar Realce(Laplaciano)", command=aplicar_realce)
-    btn_realce.pack(pady=10)
+    # Button to apply enhancement
+    btn_enhance = create_buttons(new_window, btn_default_args, "Apply Enhancement (Laplacian)", command=apply_enhancement)
+    btn_enhance.pack(pady=10)
 
-    # Botão para aplicar realce
-    btn_realce = cria_botoes(nova_janela, btn_args_padrao, "Aplicar Realce(Sobel)", command=aplicar_realce_sobel)
-    btn_realce.pack(pady=10)
+    # Button to apply enhancement (Sobel)
+    btn_enhance = create_buttons(new_window, btn_default_args, "Apply Enhancement (Sobel)", command=apply_sobel_enhancement)
+    btn_enhance.pack(pady=10)
 
-    # Botão para aumentar ou diminuir brilho
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Brilho", command=ajustar_e_mostrar_brilho)
+    # Button to increase or decrease brightness
+    btn_zoom = create_buttons(new_window, btn_default_args, "Brightness", command=adjust_and_show_brightness)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para negativo da imagem
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Negativo", command=aplicar_negativo_e_mostrar)
+    # Button for negative image
+    btn_zoom = create_buttons(new_window, btn_default_args, "Negative", command=apply_negative_and_show)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para aplicar filtro da mediana
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Mediana", command=filtroMediana)
+    # Button to apply median filter
+    btn_zoom = create_buttons(new_window, btn_default_args, "Median", command=median_filter)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para aplicar equalização
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Equalizacao", command=aplicar_equalizacao)
+    # Button to apply equalization
+    btn_zoom = create_buttons(new_window, btn_default_args, "Equalization", command=apply_equalization)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para aplicar especificação
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Especificacao", command=aplicar_equalizacao_por_referencia)
+    # Button to apply specification
+    btn_zoom = create_buttons(new_window, btn_default_args, "Specification", command=apply_equalization_by_reference)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para aplicar filtro gamma
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Gamma", command=filtro_gamma)
+    # Button to apply gamma filter
+    btn_zoom = create_buttons(new_window, btn_default_args, "Gamma", command=gamma_filter)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para contorno Canny
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Canny", command=contornoCanny)
+    # Button for Canny edge detection
+    btn_zoom = create_buttons(new_window, btn_default_args, "Canny", command=canny_edge)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
-    # Botão para transformada de hough
-    btn_zoom = cria_botoes(nova_janela, btn_args_padrao,"Transformada de Hough", command=transformadaHough)
+    # Button for Hough Transform
+    btn_zoom = create_buttons(new_window, btn_default_args, "Hough Transform", command=hough_transform)
     btn_zoom.pack(side="top", padx=10, pady=10)
 
 if __name__ == "__main__":
-    # Configuração da janela principal
+    # Main window configuration
     tk.set_default_color_theme("dark-blue")
-    janela = tk.CTk()
-    janela.title("PicTrix - Editor de Imagens")
-    janela.maxsize(width= 1600,height=800)
-    janela.minsize(width=600, height=400)
+    window = tk.CTk()
+    window.title("PicTrix - Image Editor")
+    window.maxsize(width=1600, height=800)
+    window.minsize(width=600, height=400)
     
-    janela.resizable(width=False, height=False)
-    menu_botoes()
-    # Exibição da imagem carregada no Canvas
-    canvas_imagem = tk.CTkCanvas(master=janela, bg="#240090")
-    canvas_imagem.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+    window.resizable(width=False, height=False)
+    create_buttons_menu()
+    
+    # Display the loaded image on the Canvas
+    canvas_image = tk.CTkCanvas(master=window, bg="#240090")
+    canvas_image.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
-    imagem_cv2 = None
+    cv2_image = None
 
-    # Função para redimensionar a imagem quando a janela é redimensionada
-    def redimensionar_canvas(event):
-        if imagem_original is not None:
-            mostrar_imagem(imagem_original)
+    # Function to resize the image when the window is resized
+    def resize_canvas(event):
+        if original_image is not None:
+            show_image(original_image)
 
-    # Vincula a função redimensionar_canvas ao evento de redimensionamento da janela
-    janela.bind("<Configure>", redimensionar_canvas)
+    # Bind the resize_canvas function to the window resize event
+    window.bind("<Configure>", resize_canvas)
 
-    janela.mainloop()
+    window.mainloop()
