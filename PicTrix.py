@@ -292,6 +292,10 @@ def aplicar_negativo_e_mostrar():
 def contornoCanny():
     if imagem_cv2 is not None:
         global imagem_original
+        threshold1_input = tk.CTkInputDialog(text="Informe primeiro limiar de corte.", title="threshold1")
+        threshold1 = int(threshold1_input.get_input())
+        threshold2_input = tk.CTkInputDialog(text="Informe segundo limiar de corte.", title="threshold2")
+        threshold2 = int(threshold2_input.get_input())
         imagem_original = imagem_cv2.copy()  # Salva a imagem original antes de aplicar o filtro
         img=imagem_cv2
         
@@ -299,7 +303,7 @@ def contornoCanny():
 
         #extrai contorno
         img_gray = cv2.GaussianBlur(img_gray, (5,5), 0)
-        canny_img = cv2.Canny(img_gray, 30, 150)
+        canny_img = cv2.Canny(img_gray, threshold1, threshold2)
 
         mostrar_imagem(canny_img)
 
